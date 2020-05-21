@@ -1,10 +1,11 @@
 library(readxl)
+library(caret)
 vehicle_dataset <- read_excel("C:/Users/Khushi/Desktop/Studies 2-2/Machine Learning Assignment/Active Learning Assignment/vehicle_dataset.xlsx")
 str(vehicle_dataset)
 vehicle_dataset$Class<-as.factor(vehicle_dataset$Class)
-##vehicle_dataset[,1:18]<-scale(vehicle_dataset[,1:18],TRUE,TRUE)
+vehicle_dataset[,1:18]<-scale(vehicle_dataset[,1:18],TRUE,TRUE)
 
-library(dplyr)
+
 library(caTools)
 set.seed(12345)
 
@@ -15,56 +16,55 @@ unlabelledData<-subset(t1,s==TRUE)[1:18]
 unlabelledData<-add_rownames(unlabelledData,"id")
 unlabelledData<-sapply(unlabelledData,as.numeric)
 labelledData<-subset(t1,s==FALSE)[1:19]
+library(MASS)
 
-
-
+model<-lda(Class~.,data=labelledData)
+labelledData.lda<-predict(model,newdata =as.data.frame(labelledData) )$x
+unlabelledData.lda<-predict(model,newdata = as.data.frame(unlabelledData[,2:19]))$x
+labelledData.lda<-cbind(labelledData.lda,labelledData$Class)
 
 ##clustering
 train_set<-unlabelledData[sample(nrow(unlabelledData),nrow(unlabelledData)*0.4),]
+train_set.lda<-predict(model,newdata = as.data.frame(train_set[,2:19]))$x
+train_set.lda<-cbind(train_set.lda,"id"=train_set[,1])
+
 #number of clusters
 k<-4
-train_set1<-train_set
 
 #selecting 4 random centroids
 
-maxChanges<-3
-
-
-o<-0
-
-c<-train_set[sample(nrow(train_set),4),]
+c<-train_set.lda[sample(nrow(train_set.lda),4),]
+library(dplyr)
 for(j in c(1:20)){
-  no_changes<-0
-  if(j!=1){
-    b4<-train_set$cl
-  }
-  train_set<-train_set[,1:19]
-  Dc<-c(rowSums(sweep(train_set[,2:19],2,c[1,2:19])*sweep(train_set[,2:19],2,c[1,2:19])))
-  cl<-c(rep(1,nrow(train_set)))
-  train_set<-cbind.data.frame(train_set,Dc=Dc)
-  train_set<-cbind.data.frame(train_set,cl)
+  train_set.lda<-train_set.lda[,1:4]
+  Dc<-c(rowSums(sweep(train_set.lda[,1:3],2,c[1,1:3])*sweep(train_set.lda[,1:3],2,c[1,1:3])))
+  cl<-c(rep(1,nrow(train_set.lda)))
+  train_set.lda<-cbind.data.frame(train_set.lda,Dc=Dc)
+  train_set.lda<-cbind.data.frame(train_set.lda,cl)
   for(i in c(2:4)){
-    Dc<-rowSums(sweep(train_set[,2:19],2,c[i,2:19])*sweep(train_set[,2:19],2,c[i,2:19]))
-    b4<-train_set$cl
-    train_set$cl<-if_else(train_set$Dc>Dc,i,as.integer(train_set$cl))
-    train_set$Dc<-if_else(train_set$Dc>Dc,Dc,train_set$Dc)
+    Dc<-rowSums(sweep(train_set.lda[,1:3],2,c[i,1:3])*sweep(train_set.lda[,1:3],2,c[i,1:3]))
+    
+    train_set.lda$cl<-if_else(train_set.lda$Dc>Dc,i,as.integer(train_set.lda$cl))
+    train_set.lda$Dc<-if_else(train_set.lda$Dc>Dc,Dc,train_set.lda$Dc)
   }
-  aft<-train_set$cl
-  no_changes<-if_else(b4==aft,0,1)
-  no_changes<-sum(no_changes)
+  
   
   for(i in c(1:4)){
-    c[i,]<-colMeans(select(filter(select(train_set,-Dc),cl==i),-cl))
+    c[i,]<-colMeans(filter(as.data.frame(train_set.lda)[,-5],cl==i)[,-5])
   }
-  print(sum(train_set$Dc))
+  print(sum(train_set.lda$Dc))
   
 }
 
 
-cluster1<-select(filter(select(train_set,-Dc),cl==1),-cl)
-cluster2<-select(filter(select(train_set,-Dc),cl==2),-cl)
-cluster3<-select(filter(select(train_set,-Dc),cl==3),-cl)
-cluster4<-select(filter(select(train_set,-Dc),cl==4),-cl)
+
+
+
+
+cluster1<-filter(train_set.lda[,-5],cl==1)[,-5]
+cluster2<-filter(train_set.lda[,-5],cl==2)[,-5]
+cluster3<-filter(train_set.lda[,-5],cl==3)[,-5]
+cluster4<-filter(train_set.lda[,-5],cl==4)[,-5]
 
 cluster1.20<-cluster1[sample(nrow(cluster1),nrow(cluster1)*0.2),]
 vehicle_dataset<-add_rownames(vehicle_dataset,"id")
