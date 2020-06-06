@@ -104,5 +104,3 @@ print(summary(cluster1.labels.actual)[n1])
 print(summary(cluster2.labels.actual)[n2])
 print(summary(cluster3.labels.actual)[n3])
 print(summary(cluster4.labels.actual)[n4])
-
-
