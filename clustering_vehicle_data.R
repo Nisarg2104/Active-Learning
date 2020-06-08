@@ -1,9 +1,10 @@
-library(readxl)
+
 library(caret)
-vehicle_dataset <- read_excel("C:/Users/Khushi/Desktop/Studies 2-2/Machine Learning Assignment/Active Learning Assignment/vehicle_dataset.xlsx")
+library(readxl)
+vehicle_dataset <- read_excel("C:/Users/Nisarg/Desktop/ML Assignment 2/Active-Learning/vehicle_dataset.xlsx")
 str(vehicle_dataset)
 vehicle_dataset$Class<-as.factor(vehicle_dataset$Class)
-vehicle_dataset[,1:18]<-scale(vehicle_dataset[,1:18],TRUE,TRUE)
+vehicle_dataset[,1:18]<-scale(as.data.frame(vehicle_dataset[,1:18]),TRUE,TRUE)
 
 
 library(caTools)
@@ -27,14 +28,14 @@ labelledData.lda<-cbind(labelledData.lda,labelledData$Class)
 train_set<-unlabelledData[sample(nrow(unlabelledData),nrow(unlabelledData)*0.4),]
 train_set.lda<-predict(model,newdata = as.data.frame(train_set[,2:19]))$x
 train_set.lda<-cbind(train_set.lda,"id"=train_set[,1])
+library(dplyr)
 
 #number of clusters
-k<-4
+
 
 #selecting 4 random centroids
-
+k<-4
 c<-train_set.lda[sample(nrow(train_set.lda),4),]
-library(dplyr)
 for(j in c(1:20)){
   train_set.lda<-train_set.lda[,1:4]
   Dc<-c(rowSums(sweep(train_set.lda[,1:3],2,c[1,1:3])*sweep(train_set.lda[,1:3],2,c[1,1:3])))
@@ -65,6 +66,7 @@ cluster1<-filter(train_set.lda[,-5],cl==1)[,-5]
 cluster2<-filter(train_set.lda[,-5],cl==2)[,-5]
 cluster3<-filter(train_set.lda[,-5],cl==3)[,-5]
 cluster4<-filter(train_set.lda[,-5],cl==4)[,-5]
+nrow(cluster4)
 
 cluster1.20<-cluster1[sample(nrow(cluster1),nrow(cluster1)*0.2),]
 vehicle_dataset<-add_rownames(vehicle_dataset,"id")
@@ -73,10 +75,9 @@ cluster1.20.labels<-filter(vehicle_dataset,as.numeric(vehicle_dataset$id) %in% c
 n1<-names(which.max(summary(cluster1.20.labels)))
 cluster1.labels.actual<-filter(vehicle_dataset,as.numeric(vehicle_dataset$id) %in% cluster1$id)$Class
 
-
+nrow(cluster4.20)
 
 cluster2.20<-cluster2[sample(nrow(cluster2),nrow(cluster2)*0.2),]
-vehicle_dataset<-add_rownames(vehicle_dataset,"id")
 cluster2.20.labels<-filter(vehicle_dataset,as.numeric(vehicle_dataset$id) %in% cluster2.20$id)$Class
 
 n2<-names(which.max(summary(cluster2.20.labels)))
@@ -86,14 +87,12 @@ cluster2.labels.actual<-filter(vehicle_dataset,as.numeric(vehicle_dataset$id) %i
 
 
 cluster3.20<-cluster3[sample(nrow(cluster3),nrow(cluster3)*0.2),]
-vehicle_dataset<-add_rownames(vehicle_dataset,"id")
 cluster3.20.labels<-filter(vehicle_dataset,as.numeric(vehicle_dataset$id) %in% cluster3.20$id)$Class
 
 n3<-names(which.max(summary(cluster3.20.labels)))
 cluster3.labels.actual<-filter(vehicle_dataset,as.numeric(vehicle_dataset$id) %in% cluster3$id)$Class
 
 cluster4.20<-cluster4[sample(nrow(cluster4),nrow(cluster4)*0.2),]
-vehicle_dataset<-add_rownames(vehicle_dataset,"id")
 cluster4.20.labels<-filter(vehicle_dataset,as.numeric(vehicle_dataset$id) %in% cluster4.20$id)$Class
 
 n4<-names(which.max(summary(cluster4.20.labels)))
